@@ -1,6 +1,7 @@
 package de.espend.idea.php.annotation.completion;
 
 import com.intellij.codeInsight.completion.*;
+import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Condition;
@@ -10,12 +11,16 @@ import com.intellij.psi.PsiWhiteSpace;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
 import com.jetbrains.php.PhpIcons;
+import com.jetbrains.php.PhpIndex;
+import com.jetbrains.php.completion.*;
+import com.jetbrains.php.completion.insert.PhpReferenceInsertHandler;
 import com.jetbrains.php.lang.documentation.phpdoc.lexer.PhpDocTokenTypes;
 import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocComment;
 import com.jetbrains.php.lang.documentation.phpdoc.psi.tags.PhpDocTag;
 import com.jetbrains.php.lang.lexer.PhpTokenTypes;
 import com.jetbrains.php.lang.psi.PhpPsiUtil;
 import com.jetbrains.php.lang.psi.elements.*;
+import com.jetbrains.php.lang.psi.elements.impl.PhpDefineImpl;
 import de.espend.idea.php.annotation.ApplicationSettings;
 import de.espend.idea.php.annotation.completion.insert.AnnotationTagInsertHandler;
 import de.espend.idea.php.annotation.completion.lookupelements.PhpAnnotationPropertyLookupElement;
@@ -34,8 +39,11 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author Daniel Espendiller <daniel@espendiller.net>
@@ -50,9 +58,15 @@ public class AnnotationCompletionContributor extends CompletionContributor {
 
         // @Callback("", <caret>)
         extend(CompletionType.BASIC, AnnotationPattern.getDocAttribute(), new PhpDocAttributeList());
+        extend(CompletionType.BASIC, AnnotationPattern.getDocAttribute(), new PhpDocClassCompletion());
+        extend(CompletionType.BASIC, AnnotationPattern.getDocAttribute(), new PhpDocGlobalConstantCompletion());
         extend(CompletionType.BASIC, AnnotationPattern.getTextIdentifier(), new PhpDocAttributeValue());
         extend(CompletionType.BASIC, AnnotationPattern.getDefaultPropertyValue(), new PhpDocDefaultValue());
         extend(CompletionType.BASIC, AnnotationPattern.getDocBlockTagAfterBackslash(), new PhpDocBlockTagAlias());
+
+        // @Route(name=<caret>)
+        extend(CompletionType.BASIC, AnnotationPattern.getPropertyValue(), new PhpDocClassCompletion());
+        extend(CompletionType.BASIC, AnnotationPattern.getPropertyValue(), new PhpDocGlobalConstantCompletion());
 
         // @Route(name=ClassName::<FOO>)
         extend(CompletionType.BASIC, AnnotationPattern.getClassConstant(), new PhpDocClassConstantCompletion());
@@ -249,7 +263,7 @@ public class AnnotationCompletionContributor extends CompletionContributor {
             }
 
             AnnotationUtil.visitAttributes(phpClass, (attributeName, type, target) -> {
-                completionResultSet.addElement(new PhpAnnotationPropertyLookupElement(new AnnotationProperty(attributeName, AnnotationPropertyEnum.fromString(type))));
+                completionResultSet.addElement(PrioritizedLookupElement.withPriority(new PhpAnnotationPropertyLookupElement(new AnnotationProperty(attributeName, AnnotationPropertyEnum.fromString(type))),100));
                 return null;
             });
 
@@ -432,10 +446,84 @@ public class AnnotationCompletionContributor extends CompletionContributor {
             }
 
             PhpClass phpClass = AnnotationUtil.getClassFromConstant(psiElement);
-            if(phpClass != null) {
-                phpClass.getFields().stream().filter(Field::isConstant).forEach(field ->
-                    result.addElement(LookupElementBuilder.create(field.getName()).withIcon(PhpIcons.FIELD).withTypeText(phpClass.getName(), true))
+            if (phpClass != null) {
+                result.addElement(PrioritizedLookupElement.withPriority(LookupElementBuilder.create("class").withTypeText(phpClass.getName(), true), 1));
+                phpClass.getFields().stream().filter(Field::isConstant).forEach(field -> {
+                            result.addElement(PrioritizedLookupElement.withPriority(LookupElementBuilder.create(field.getName()).withIcon(PhpIcons.CONSTANT).withTypeText(phpClass.getName(), true).withTailText(" = " + field.getDefaultValue().getText()), 100));
+                        }
                 );
+            }
+        }
+    }
+
+    private class PhpDocClassCompletion extends CompletionProvider<CompletionParameters> {
+
+        @Override
+        protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
+            PsiElement psiElement = parameters.getOriginalPosition();
+            if (psiElement == null) {
+                return;
+            }
+
+            System.out.println(psiElement.getText());
+
+            final List<PhpClass>     completionResult = new ArrayList<>();
+            final PhpIndex           index            = PhpIndex.getInstance(parameters.getOriginalPosition().getProject());
+            final Collection<String> names            = index.getAllClassNames(null);
+            for (final String name : names) {
+                final Collection<PhpClass> classes = index.getClassesByName(name);
+                //final Collection<PhpClass> interfaces = index.getInterfacesByName(name); // if you need interfaces, too
+                //final Collection<PhpClass> traits = index.getTraitsByName(name); // if you need traits, too
+                completionResult.addAll(classes);
+            }
+            //final Collection<PhpClass> filteredClasses = index.filterByNamespace(result, namespaceName); // if you have a namespace name to filter by
+            for (final PhpClass phpClass : completionResult) {
+                if (phpClass.getName().equals("__PHP_Incomplete_Class")) {
+                    continue;
+                }
+                PhpFqnLookupElement lookupElement = new PhpFqnLookupElement(phpClass);
+                lookupElement.handler = new InsertHandler<>() {
+                    @Override
+                    public void handleInsert(@NotNull InsertionContext context, @NotNull LookupElement item) {
+                        PhpReferenceInsertHandler.getInstance().handleInsert(context, item);
+                    }
+                };
+                result.addElement(PrioritizedLookupElement.withPriority(lookupElement, 1));
+            }
+        }
+    }
+
+    private class PhpDocGlobalConstantCompletion extends CompletionProvider<CompletionParameters> {
+
+        @Override
+        protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
+            PsiElement psiElement = parameters.getOriginalPosition();
+            if (psiElement == null) {
+                return;
+            }
+
+            System.out.println(psiElement.getText());
+
+            final List<Constant>     completionResult = new ArrayList<>();
+            final PhpIndex           index            = PhpIndex.getInstance(parameters.getOriginalPosition().getProject());
+            final Collection<String> names            = index.getAllConstantNames(null);
+            for (final String name : names) {
+                final Collection<Constant> classes = index
+                        .getConstantsByName(name)
+                        .stream()
+                        .filter(constant -> constant instanceof PhpDefineImpl)
+                        .collect(Collectors.toList());
+                completionResult.addAll(classes);
+            }
+            for (final Constant constant : completionResult) {
+                PhpFqnLookupElement lookupElement = new PhpFqnLookupElement(constant);
+                lookupElement.handler = new InsertHandler<>() {
+                    @Override
+                    public void handleInsert(@NotNull InsertionContext context, @NotNull LookupElement item) {
+                        PhpReferenceInsertHandler.getInstance().handleInsert(context, item);
+                    }
+                };
+                result.addElement(PrioritizedLookupElement.withPriority(lookupElement, 1));
             }
         }
     }

@@ -103,6 +103,17 @@ public class AnnotationPattern {
     }
 
     /**
+     * matches "@Callback(property=<value>)"
+     */
+    public static ElementPattern<PsiElement> getPropertyValue() {
+        return PlatformPatterns.psiElement()
+                .afterLeafSkipping(
+                        PlatformPatterns.psiElement(PsiWhiteSpace.class),
+                        PlatformPatterns.psiElement(PhpDocTokenTypes.DOC_TEXT).withText(PlatformPatterns.string().containsChars("="))
+                );
+    }
+
+    /**
      * matches "@Callback(<property>=)"
      */
     public static ElementPattern<PsiElement> getPropertyIdentifier(String propertyName) {
