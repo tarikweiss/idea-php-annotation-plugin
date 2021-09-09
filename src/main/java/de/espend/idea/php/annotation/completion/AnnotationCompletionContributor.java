@@ -71,8 +71,12 @@ public class AnnotationCompletionContributor extends CompletionContributor {
         // @Route(name=ClassName::<FOO>)
         extend(CompletionType.BASIC, AnnotationPattern.getClassConstant(), new PhpDocClassConstantCompletion());
 
-        // @Foo(name={"FOOBAR", "<caret>"})
+        // @Foo(name={"FOOBAR", <caret>})
         extend(CompletionType.BASIC, AnnotationPattern.getPropertyArrayPattern(), new PhpDocArrayPropertyCompletion());
+
+        // @Foo(name={"FOOBAR", "<caret>"})
+        extend(CompletionType.BASIC, AnnotationPattern.getPropertyArrayItemPattern(), new PhpDocClassCompletion());
+        extend(CompletionType.BASIC, AnnotationPattern.getPropertyArrayItemPattern(), new PhpDocGlobalConstantCompletion());
 
         // #[Route('/path', methods: ['action'])]
         extend(CompletionType.BASIC, AnnotationPattern.getAttributesArrayPattern(), new AttributesArrayPropertyCompletion());
@@ -83,13 +87,13 @@ public class AnnotationCompletionContributor extends CompletionContributor {
         @Override
         protected void addCompletions(@NotNull CompletionParameters parameters, ProcessingContext context, @NotNull CompletionResultSet result) {
             PsiElement psiElement = parameters.getOriginalPosition();
-            if(psiElement == null) {
+            if (psiElement == null) {
                 return;
             }
 
             PhpDocTag phpDocTag = PsiTreeUtil.getParentOfType(parameters.getOriginalPosition(), PhpDocTag.class);
-            PhpClass phpClass = AnnotationUtil.getAnnotationReference(phpDocTag);
-            if(phpClass == null) {
+            PhpClass  phpClass  = AnnotationUtil.getAnnotationReference(phpDocTag);
+            if (phpClass == null) {
                 return;
             }
 
@@ -107,31 +111,31 @@ public class AnnotationCompletionContributor extends CompletionContributor {
         @Override
         protected void addCompletions(@NotNull CompletionParameters parameters, ProcessingContext context, @NotNull CompletionResultSet result) {
             PsiElement psiElement = parameters.getOriginalPosition();
-            if(psiElement == null) {
+            if (psiElement == null) {
                 return;
             }
 
             PsiElement parent = psiElement.getParent();
-            if(!(parent instanceof StringLiteralExpression)) {
+            if (!(parent instanceof StringLiteralExpression)) {
                 return;
             }
 
             PhpDocTag phpDocTag = PsiTreeUtil.getParentOfType(parameters.getOriginalPosition(), PhpDocTag.class);
-            PhpClass phpClass = AnnotationUtil.getAnnotationReference(phpDocTag);
-            if(phpClass == null) {
+            PhpClass  phpClass  = AnnotationUtil.getAnnotationReference(phpDocTag);
+            if (phpClass == null) {
                 return;
             }
 
             PsiElement propertyForEnum = AnnotationUtil.getPropertyForArray((StringLiteralExpression) parent);
-            if(propertyForEnum == null) {
+            if (propertyForEnum == null) {
                 return;
             }
 
             AnnotationPropertyParameter annotationPropertyParameter = new AnnotationPropertyParameter(
-                parameters.getOriginalPosition(),
-                phpClass,
-                propertyForEnum.getText(),
-                AnnotationPropertyParameter.Type.PROPERTY_ARRAY
+                    parameters.getOriginalPosition(),
+                    phpClass,
+                    propertyForEnum.getText(),
+                    AnnotationPropertyParameter.Type.PROPERTY_ARRAY
             );
 
             providerWalker(parameters, context, result, annotationPropertyParameter);
@@ -145,12 +149,12 @@ public class AnnotationCompletionContributor extends CompletionContributor {
         @Override
         protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
             PsiElement psiElement = parameters.getOriginalPosition();
-            if(psiElement == null) {
+            if (psiElement == null) {
                 return;
             }
 
             PsiElement parent = psiElement.getParent();
-            if(!(parent instanceof StringLiteralExpression)) {
+            if (!(parent instanceof StringLiteralExpression)) {
                 return;
             }
 
@@ -187,13 +191,13 @@ public class AnnotationCompletionContributor extends CompletionContributor {
             AnnotationCompletionProviderParameter completionParameter = new AnnotationCompletionProviderParameter(parameters, context, result);
 
             AnnotationPropertyParameter annotationPropertyParameter = new AnnotationPropertyParameter(
-                parameters.getOriginalPosition(),
-                phpClass,
-                attributeName,
-                AnnotationPropertyParameter.Type.PROPERTY_ARRAY
+                    parameters.getOriginalPosition(),
+                    phpClass,
+                    attributeName,
+                    AnnotationPropertyParameter.Type.PROPERTY_ARRAY
             );
 
-            for(PhpAnnotationCompletionProvider phpAnnotationExtension : AnnotationUtil.EXTENSION_POINT_COMPLETION.getExtensions()) {
+            for (PhpAnnotationCompletionProvider phpAnnotationExtension : AnnotationUtil.EXTENSION_POINT_COMPLETION.getExtensions()) {
                 phpAnnotationExtension.getPropertyValueCompletions(annotationPropertyParameter, completionParameter);
             }
         }
@@ -202,7 +206,7 @@ public class AnnotationCompletionContributor extends CompletionContributor {
     private void providerWalker(CompletionParameters parameters, ProcessingContext context, CompletionResultSet result, AnnotationPropertyParameter annotationPropertyParameter) {
         AnnotationCompletionProviderParameter completionParameter = new AnnotationCompletionProviderParameter(parameters, context, result);
 
-        for(PhpAnnotationCompletionProvider phpAnnotationExtension : AnnotationUtil.EXTENSION_POINT_COMPLETION.getExtensions()) {
+        for (PhpAnnotationCompletionProvider phpAnnotationExtension : AnnotationUtil.EXTENSION_POINT_COMPLETION.getExtensions()) {
             phpAnnotationExtension.getPropertyValueCompletions(annotationPropertyParameter, completionParameter);
         }
     }
@@ -212,23 +216,23 @@ public class AnnotationCompletionContributor extends CompletionContributor {
         @Override
         protected void addCompletions(@NotNull CompletionParameters parameters, ProcessingContext context, @NotNull CompletionResultSet result) {
             PsiElement psiElement = parameters.getOriginalPosition();
-            if(psiElement == null) {
+            if (psiElement == null) {
                 return;
             }
 
             PsiElement phpDocString = psiElement.getContext();
-            if(!(phpDocString instanceof StringLiteralExpression)) {
+            if (!(phpDocString instanceof StringLiteralExpression)) {
                 return;
             }
 
             PsiElement propertyName = PhpElementsUtil.getPrevSiblingOfPatternMatch(phpDocString, PlatformPatterns.psiElement(PhpDocTokenTypes.DOC_IDENTIFIER));
-            if(propertyName == null) {
+            if (propertyName == null) {
                 return;
             }
 
             PhpDocTag phpDocTag = PsiTreeUtil.getParentOfType(parameters.getOriginalPosition(), PhpDocTag.class);
-            PhpClass phpClass = AnnotationUtil.getAnnotationReference(phpDocTag);
-            if(phpClass == null) {
+            PhpClass  phpClass  = AnnotationUtil.getAnnotationReference(phpDocTag);
+            if (phpClass == null) {
                 return;
             }
 
@@ -240,7 +244,7 @@ public class AnnotationCompletionContributor extends CompletionContributor {
 
     /**
      * Provides attribute so field properties of annotation
-     *
+     * <p>
      * "@Foo(<caret>)" => @Foo(name=)
      * "@Foo("foo", <caret>)" => "@Foo("foo", name=)"
      */
@@ -263,13 +267,13 @@ public class AnnotationCompletionContributor extends CompletionContributor {
             }
 
             AnnotationUtil.visitAttributes(phpClass, (attributeName, type, target) -> {
-                completionResultSet.addElement(PrioritizedLookupElement.withPriority(new PhpAnnotationPropertyLookupElement(new AnnotationProperty(attributeName, AnnotationPropertyEnum.fromString(type))),100));
+                completionResultSet.addElement(PrioritizedLookupElement.withPriority(new PhpAnnotationPropertyLookupElement(new AnnotationProperty(attributeName, AnnotationPropertyEnum.fromString(type))), 100));
                 return null;
             });
 
             // extension point for virtual properties
             AnnotationVirtualPropertyCompletionParameter virtualPropertyParameter = null;
-            AnnotationCompletionProviderParameter parameter = null;
+            AnnotationCompletionProviderParameter        parameter                = null;
 
             for (PhpAnnotationVirtualProperties ep : AnnotationUtil.EP_VIRTUAL_PROPERTIES.getExtensions()) {
                 if (virtualPropertyParameter == null) {
@@ -286,7 +290,7 @@ public class AnnotationCompletionContributor extends CompletionContributor {
             if (virtualPropertyParameter != null) {
                 for (Map.Entry<String, AnnotationPropertyEnum> pair : virtualPropertyParameter.getLookupElements().entrySet()) {
                     completionResultSet.addElement(new PhpAnnotationPropertyLookupElement(
-                        new AnnotationProperty(pair.getKey(), pair.getValue()))
+                            new AnnotationProperty(pair.getKey(), pair.getValue()))
                     );
                 }
             }
@@ -298,41 +302,41 @@ public class AnnotationCompletionContributor extends CompletionContributor {
         @Override
         protected void addCompletions(@NotNull CompletionParameters completionParameters, @NotNull ProcessingContext processingContext, @NotNull CompletionResultSet completionResultSet) {
             PsiElement psiElement = completionParameters.getOriginalPosition();
-            if(psiElement == null) {
+            if (psiElement == null) {
                 return;
             }
 
             PhpDocComment parentOfType = PsiTreeUtil.getParentOfType(psiElement, PhpDocComment.class);
-            if(parentOfType == null) {
+            if (parentOfType == null) {
                 return;
             }
 
             AnnotationTarget annotationTarget = PhpElementsUtil.findAnnotationTarget(parentOfType);
-            if(annotationTarget == null) {
+            if (annotationTarget == null) {
                 return;
             }
 
             Map<String, String> importMap = AnnotationUtil.getUseImportMap((PsiElement) parentOfType);
 
             Project project = completionParameters.getPosition().getProject();
-            attachLookupElements(project, importMap , annotationTarget, completionResultSet);
+            attachLookupElements(project, importMap, annotationTarget, completionResultSet);
 
         }
 
         private void attachLookupElements(Project project, Map<String, String> importMap, AnnotationTarget foundTarget, CompletionResultSet completionResultSet) {
-            for(PhpAnnotation phpClass: getPhpAnnotationTargetClasses(project, foundTarget)) {
+            for (PhpAnnotation phpClass : getPhpAnnotationTargetClasses(project, foundTarget)) {
                 final PhpClass underlyingClass = phpClass.getPhpClass();
 
                 String fqnClass = underlyingClass.getFQN();
-                if(!fqnClass.startsWith("\\")) {
+                if (!fqnClass.startsWith("\\")) {
                     fqnClass = "\\" + fqnClass;
                 }
 
                 PhpClassAnnotationLookupElement lookupElement = new PhpClassAnnotationLookupElement(underlyingClass)
-                    .withInsertHandler(AnnotationTagInsertHandler.getInstance());
+                        .withInsertHandler(AnnotationTagInsertHandler.getInstance());
 
-                for(Map.Entry<String, String> entry: importMap.entrySet()) {
-                    if(fqnClass.startsWith(entry.getValue() + "\\")) {
+                for (Map.Entry<String, String> entry : importMap.entrySet()) {
+                    if (fqnClass.startsWith(entry.getValue() + "\\")) {
                         lookupElement.withTypeText(entry.getKey() + fqnClass.substring(entry.getValue().length()));
                     }
                 }
@@ -347,7 +351,7 @@ public class AnnotationCompletionContributor extends CompletionContributor {
 
                     String substring = fqnClass.substring(className.length());
 
-                    String lookupString = useAliasOption.getAlias() + "\\" + substring;
+                    String                          lookupString                    = useAliasOption.getAlias() + "\\" + substring;
                     PhpClassAnnotationLookupElement phpClassAnnotationLookupElement = new PhpClassAnnotationLookupElement(underlyingClass, useAliasOption, lookupString);
                     phpClassAnnotationLookupElement.withInsertHandler(AnnotationTagInsertHandler.getInstance());
 
@@ -361,10 +365,10 @@ public class AnnotationCompletionContributor extends CompletionContributor {
         private Collection<PhpAnnotation> getPhpAnnotationTargetClasses(Project project, AnnotationTarget foundTarget) {
             // @TODO: how handle unknown types
             return AnnotationUtil.getAnnotationsOnTargetMap(project,
-                foundTarget,
-                AnnotationTarget.ALL,
-                AnnotationTarget.UNKNOWN,
-                AnnotationTarget.UNDEFINED
+                    foundTarget,
+                    AnnotationTarget.ALL,
+                    AnnotationTarget.UNKNOWN,
+                    AnnotationTarget.UNDEFINED
             ).values();
         }
 
@@ -375,53 +379,53 @@ public class AnnotationCompletionContributor extends CompletionContributor {
         @Override
         protected void addCompletions(@NotNull CompletionParameters completionParameters, ProcessingContext processingContext, @NotNull CompletionResultSet completionResultSet) {
             PsiElement psiElement = completionParameters.getOriginalPosition();
-            if(psiElement == null) {
+            if (psiElement == null) {
                 return;
             }
 
             PsiElement phpDocTag = psiElement.getParent();
-            if(!(phpDocTag instanceof PhpDocTag)) {
+            if (!(phpDocTag instanceof PhpDocTag)) {
                 return;
             }
 
             String name = ((PhpDocTag) phpDocTag).getName();
-            if(!(name.startsWith("@"))) {
+            if (!(name.startsWith("@"))) {
                 return;
             }
 
             int start = name.indexOf("\\");
-            if(start == -1) {
+            if (start == -1) {
                 return;
             }
 
             name = name.substring(1, start);
 
             Map<String, String> importMap = AnnotationUtil.getUseImportMap(phpDocTag);
-            if(!importMap.containsKey(name)) {
+            if (!importMap.containsKey(name)) {
                 return;
             }
 
             // find annotation scope, to filter classes
             AnnotationTarget annotationTarget = PhpElementsUtil.findAnnotationTarget(PsiTreeUtil.getParentOfType(psiElement, PhpDocComment.class));
-            if(annotationTarget == null) {
+            if (annotationTarget == null) {
                 annotationTarget = AnnotationTarget.UNKNOWN;
             }
 
 
             // force trailing backslash on namespace
             String namespace = importMap.get(name);
-            if(!namespace.startsWith("\\")) {
+            if (!namespace.startsWith("\\")) {
                 namespace = "\\" + namespace;
             }
 
 
             Map<String, PhpAnnotation> annotationMap = AnnotationUtil.getAnnotationsOnTargetMap(psiElement.getProject(), AnnotationTarget.ALL, AnnotationTarget.UNDEFINED, AnnotationTarget.UNKNOWN, annotationTarget);
 
-            for(PhpClass phpClass: PhpIndexUtil.getPhpClassInsideNamespace(psiElement.getProject(), namespace)) {
+            for (PhpClass phpClass : PhpIndexUtil.getPhpClassInsideNamespace(psiElement.getProject(), namespace)) {
                 String fqnName = StringUtils.stripStart(phpClass.getFQN(), "\\");
-                if(annotationMap.containsKey(fqnName)) {
+                if (annotationMap.containsKey(fqnName)) {
                     PhpAnnotation phpAnnotation = annotationMap.get(fqnName);
-                    if(phpAnnotation != null && phpAnnotation.matchOneOf(AnnotationTarget.ALL, AnnotationTarget.UNDEFINED, AnnotationTarget.UNKNOWN, annotationTarget)) {
+                    if (phpAnnotation != null && phpAnnotation.matchOneOf(AnnotationTarget.ALL, AnnotationTarget.UNDEFINED, AnnotationTarget.UNKNOWN, annotationTarget)) {
                         String subNamespace = fqnName.substring(namespace.length());
                         String lookupString = name + "\\" + subNamespace;
                         completionResultSet.addElement(LookupElementBuilder.create(lookupString).withTypeText(phpClass.getPresentableFQN(), true).withIcon(phpClass.getIcon()).withInsertHandler(AnnotationTagInsertHandler.getInstance()));
@@ -441,7 +445,7 @@ public class AnnotationCompletionContributor extends CompletionContributor {
         @Override
         protected void addCompletions(@NotNull CompletionParameters parameters, ProcessingContext context, @NotNull CompletionResultSet result) {
             PsiElement psiElement = parameters.getOriginalPosition();
-            if(psiElement == null) {
+            if (psiElement == null) {
                 return;
             }
 
@@ -465,31 +469,25 @@ public class AnnotationCompletionContributor extends CompletionContributor {
                 return;
             }
 
-            System.out.println(psiElement.getText());
-
-            final List<PhpClass>     completionResult = new ArrayList<>();
-            final PhpIndex           index            = PhpIndex.getInstance(parameters.getOriginalPosition().getProject());
-            final Collection<String> names            = index.getAllClassNames(null);
-            for (final String name : names) {
-                final Collection<PhpClass> classes = index.getClassesByName(name);
-                //final Collection<PhpClass> interfaces = index.getInterfacesByName(name); // if you need interfaces, too
-                //final Collection<PhpClass> traits = index.getTraitsByName(name); // if you need traits, too
-                completionResult.addAll(classes);
-            }
-            //final Collection<PhpClass> filteredClasses = index.filterByNamespace(result, namespaceName); // if you have a namespace name to filter by
-            for (final PhpClass phpClass : completionResult) {
-                if (phpClass.getName().equals("__PHP_Incomplete_Class")) {
-                    continue;
-                }
-                PhpFqnLookupElement lookupElement = new PhpFqnLookupElement(phpClass);
-                lookupElement.handler = new InsertHandler<>() {
-                    @Override
-                    public void handleInsert(@NotNull InsertionContext context, @NotNull LookupElement item) {
-                        PhpReferenceInsertHandler.getInstance().handleInsert(context, item);
-                    }
-                };
-                result.addElement(PrioritizedLookupElement.withPriority(lookupElement, 1));
-            }
+            final PhpIndex           index = PhpIndex.getInstance(parameters.getOriginalPosition().getProject());
+            final Collection<String> names = index.getAllClassNames(null);
+            names
+                .stream()
+                .map(index::getClassesByName)
+                .forEach(classes ->
+                    classes
+                        .stream()
+                        .filter(phpClass -> !phpClass.getName().equals("__PHP_Incomplete_Class"))
+                        .forEach(phpClass -> {
+                            PhpFqnLookupElement lookupElement = new PhpFqnLookupElement(phpClass);
+                            lookupElement.handler = new InsertHandler<>() {
+                                @Override
+                                public void handleInsert(@NotNull InsertionContext context, @NotNull LookupElement item) {
+                                    PhpReferenceInsertHandler.getInstance().handleInsert(context, item);
+                                }
+                            };
+                            result.addElement(PrioritizedLookupElement.withPriority(lookupElement, 1));
+                        }));
         }
     }
 
@@ -504,27 +502,25 @@ public class AnnotationCompletionContributor extends CompletionContributor {
 
             System.out.println(psiElement.getText());
 
-            final List<Constant>     completionResult = new ArrayList<>();
-            final PhpIndex           index            = PhpIndex.getInstance(parameters.getOriginalPosition().getProject());
-            final Collection<String> names            = index.getAllConstantNames(null);
-            for (final String name : names) {
-                final Collection<Constant> classes = index
-                        .getConstantsByName(name)
+            final PhpIndex           index = PhpIndex.getInstance(parameters.getOriginalPosition().getProject());
+            final Collection<String> names = index.getAllConstantNames(null);
+            names
+                .stream()
+                .map(index::getConstantsByName)
+                .forEach(constants ->
+                    constants
                         .stream()
                         .filter(constant -> constant instanceof PhpDefineImpl)
-                        .collect(Collectors.toList());
-                completionResult.addAll(classes);
-            }
-            for (final Constant constant : completionResult) {
-                PhpFqnLookupElement lookupElement = new PhpFqnLookupElement(constant);
-                lookupElement.handler = new InsertHandler<>() {
-                    @Override
-                    public void handleInsert(@NotNull InsertionContext context, @NotNull LookupElement item) {
-                        PhpReferenceInsertHandler.getInstance().handleInsert(context, item);
-                    }
-                };
-                result.addElement(PrioritizedLookupElement.withPriority(lookupElement, 1));
-            }
+                        .forEach(constant -> {
+                            PhpFqnLookupElement lookupElement = new PhpFqnLookupElement(constant);
+                            lookupElement.handler = new InsertHandler<>() {
+                                @Override
+                                public void handleInsert(@NotNull InsertionContext context, @NotNull LookupElement item) {
+                                    PhpReferenceInsertHandler.getInstance().handleInsert(context, item);
+                                }
+                            };
+                            result.addElement(PrioritizedLookupElement.withPriority(lookupElement, 1));
+                        }));
         }
     }
 }

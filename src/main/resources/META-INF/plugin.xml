@@ -97,6 +97,19 @@
                              id="asTrue" order="first"/>
 
       <annotator language="PHP" implementationClass="de.espend.idea.php.annotation.annotator.AnnotationDocTagAnnotator"/>
+      <annotator language="PHP" implementationClass="de.espend.idea.php.annotation.highlighting.AnnotationDocTagHighlightingAnnotator"/>
+<!--      <fileType-->
+<!--              name="Annotation PHP File"-->
+<!--              extensions="php"-->
+<!--              fieldName="INSTANCE"-->
+<!--              implementationClass="de.espend.idea.php.annotation.highlighting.language.AnnotationPhpFileType"/>-->
+<!--      <lang.parserDefinition language="AnnotationPhp" implementationClass="de.espend.idea.php.annotation.highlighting.language.AnnotationPhpParserDefinition" />-->
+<!--      <lang.syntaxHighlighterFactory-->
+<!--              language="AnnotationPhp"-->
+<!--              implementationClass="de.espend.idea.php.annotation.highlighting.language.AnnotationPhpSyntaxHighlighterFactory"/>-->
+<!--      <lang.fileViewProviderFactory-->
+<!--              language="AnnotationPhp"-->
+<!--              implementationClass="de.espend.idea.php.annotation.highlighting.file.AnnotationPhpFileViewProviderFactory" />-->
 
       <codeInsight.lineMarkerProvider language="PHP" implementationClass="de.espend.idea.php.annotation.navigation.AnnotationUsageLineMarkerProvider"/>
 

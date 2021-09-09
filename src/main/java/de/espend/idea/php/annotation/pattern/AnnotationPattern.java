@@ -25,6 +25,35 @@ public class AnnotationPattern {
         return PlatformPatterns.psiElement(PhpDocTokenTypes.DOC_TAG_NAME);
     }
 
+    public static ElementPattern<PsiElement> getCollectionBraces() {
+        return
+            PlatformPatterns.or(
+                    PlatformPatterns
+                            .psiElement(PhpDocTokenTypes.DOC_LBRACE)
+                            .withLanguage(PhpLanguage.INSTANCE),
+                    PlatformPatterns
+                            .psiElement(PhpDocTokenTypes.DOC_RBRACE)
+                            .withLanguage(PhpLanguage.INSTANCE),
+                    PlatformPatterns
+                            .psiElement(PhpDocTokenTypes.DOC_TEXT)
+                            .withText("}")
+            );
+    }
+
+    public static ElementPattern<PsiElement> getBooleanValues() {
+        return
+            PlatformPatterns.or(
+                    PlatformPatterns
+                            .psiElement(PhpDocTokenTypes.DOC_IDENTIFIER)
+                            .withText("true")
+                            .withLanguage(PhpLanguage.INSTANCE),
+                    PlatformPatterns
+                            .psiElement(PhpDocTokenTypes.DOC_IDENTIFIER)
+                            .withText("false")
+                            .withLanguage(PhpLanguage.INSTANCE)
+            );
+    }
+
     public static ElementPattern<PsiElement> getDocBlockTag() {
         return
             PlatformPatterns.or(
@@ -258,6 +287,60 @@ public class AnnotationPattern {
                     )
                 )
             );
+    }
+
+    /**
+     * Route("/", methods={<caret>, "POST"})
+     * Route("/", methods={"GET", <caret>})
+     */
+    public static ElementPattern<PsiElement> getPropertyArrayItemPattern() {
+
+        // "methods={"
+        PsiElementPattern.Capture<PsiElement> propertyPattern = PlatformPatterns.psiElement(PhpDocTokenTypes.DOC_LBRACE)
+            .afterLeafSkipping(
+                PlatformPatterns.or(
+                    PlatformPatterns.psiElement(PsiWhiteSpace.class)
+                ),
+            PlatformPatterns.psiElement(PhpDocTokenTypes.DOC_TEXT).withText("=").afterLeafSkipping(
+                PlatformPatterns.psiElement(PsiWhiteSpace.class),
+                PlatformPatterns.psiElement(PhpDocTokenTypes.DOC_IDENTIFIER)
+            )
+        );
+
+        return
+                PlatformPatterns.and(
+                        PlatformPatterns.not(
+                                PlatformPatterns.psiElement(PhpDocTokenTypes.DOC_STRING)
+                        ),
+                        PlatformPatterns.or(
+                                // methods={<caret>, "POST"}
+                                PlatformPatterns.psiElement()
+                                        .afterLeafSkipping(
+                                                PlatformPatterns.or(
+                                                        PlatformPatterns.psiElement(PsiWhiteSpace.class),
+                                                        PlatformPatterns.psiElement().with(new MyWhiteSpaceAsTextPatternCondition())
+                                                ),
+                                                propertyPattern
+                                        ),
+                                // methods={"POST" , <caret>}
+                                PlatformPatterns.psiElement()
+                                        .afterLeafSkipping(
+                                                PlatformPatterns.or(
+                                                        PlatformPatterns.psiElement(PsiWhiteSpace.class),
+                                                        PlatformPatterns.psiElement().with(new MyWhiteSpaceAsTextPatternCondition())
+                                                ),
+                                                PlatformPatterns.psiElement(PhpDocTokenTypes.DOC_COMMA).afterLeafSkipping(
+                                                        PlatformPatterns.or(
+                                                                PlatformPatterns.psiElement(PsiWhiteSpace.class),
+                                                                PlatformPatterns.psiElement().with(new MyWhiteSpaceAsTextPatternCondition()),
+                                                                PlatformPatterns.psiElement(PhpDocTokenTypes.DOC_STRING),
+                                                                PlatformPatterns.psiElement(PhpDocTokenTypes.DOC_COMMA)
+                                                        ),
+                                                        propertyPattern
+                                                )
+                                        )
+                        )
+                );
     }
 
     /**

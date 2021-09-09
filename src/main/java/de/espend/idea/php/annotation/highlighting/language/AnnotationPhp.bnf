@@ -1,0 +1,48 @@
+{
+    parserClass="de.espend.idea.php.annotation.highlighting.language.parser.AnnotationPhpParser"
+  parserUtilClass="de.espend.idea.php.annotation.highlighting.language.parser.AnnotationPhpParserUtil"
+
+    extends="com.intellij.extapi.psi.ASTWrapperPsiElement"
+
+    psiClassPrefix="AnnotationPhp"
+    psiImplClassSuffix="Impl"
+    psiPackage="de.espend.idea.php.annotation.highlighting.language.psi"
+    psiImplPackage="de.espend.idea.php.annotation.highlighting.language.psi.impl"
+
+    elementTypeHolderClass="de.espend.idea.php.annotation.highlighting.language.psi.AnnotationPhpTypes"
+    elementTypeClass="de.espend.idea.php.annotation.highlighting.language.psi.AnnotationPhpElementType"
+    tokenTypeClass="de.espend.idea.php.annotation.highlighting.language.psi.AnnotationPhpTokenType"
+
+    tokens = [
+        STRING="regexp:('([^'\\]|\\.)*'|\"([^\"\\]|\\\"|\\\'|\\)*\")"
+        NUMBER="regexp:\d+"
+        COMMA=","
+        NAMESPACE_OPERATOR="regexp:\\"
+        DOC_BLOCK_LEADING_ASTERISK="regexp:\*"
+        LBRACES="{"
+        RBRACES="}"
+        EQUAL_OPERATOR="="
+        KEY_VALUE_ASSIGN=":"
+        ANNOTATION_AT="@"
+    ]
+
+}
+
+root_expr                    ::= [ SURROUNDING_CODE * ] ( AnnotationWrapper * ) [ SURROUNDING_CODE * ]
+AnnotationWrapper            ::= Annotation | SURROUNDING_CODE +
+Annotation                   ::= ANNOTATION_AT AnnotationName AnnotationBody
+AnnotationName               ::= [ AnnotationNamespace ] ANNOTATION_CLASS
+ClassName                    ::= [ ClassNamespace ] CLASS
+AnnotationNamespace          ::= [ ANNOTATION_NAMESPACE_OPERATOR ] [ ( ANNOTATION_NAMESPACE_NAME ANNOTATION_NAMESPACE_OPERATOR ) * ]
+ClassNamespace               ::= [ CLASS_NAMESPACE_OPERATOR ] [ ( CLASS_NAMESPACE_NAME CLASS_NAMESPACE_OPERATOR ) * ]
+AnnotationBody               ::= [ LPARANTHESES_CLASS_BODY [ Values ] RPARANTHESES_CLASS_BODY ]
+Values                       ::= ( Array | Value ) [ ( COMMA ( Array | Value ) ) * ] [ COMMA ]
+Value                        ::= PlainValue | FieldAssignment
+PlainValue                   ::= STRING | Float | Integer | Boolean | Array | Annotation | ( ClassName STATIC_ACCESS_OPERATOR ( CONSTANT | CLASS_KEYWORD ) ) | NULL_KEYWORD | IDENTIFIER
+Array                        ::= LBRACES [ ArrayEntry [ ( COMMA ArrayEntry ) * ] ] [ COMMA ] RBRACES
+ArrayEntry                   ::= PlainValue | KeyValuePair
+KeyValuePair                 ::= CLASS_FIELD ( EQUAL_OPERATOR | KEY_VALUE_ASSIGN ) ( PlainValue )
+FieldAssignment              ::= CLASS_FIELD EQUAL_OPERATOR PlainValue
+Boolean                      ::= BOOL_TRUE_KEYWORD | BOOL_FALSE_KEYWORD
+Float                        ::= NUMBER "." NUMBER
+Integer                      ::= NUMBER

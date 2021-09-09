@@ -23,6 +23,8 @@ def requiredPlugins = [
     'properties'
 ]
 
+sourceSets.main.java.srcDirs 'src/main/gen'
+
 if(ideaVersion.startsWith("IU-2019.1")) {
     requiredPlugins.removeAll { (it.toLowerCase() == 'java') }
 }
@@ -41,6 +43,10 @@ intellij {
             enabled = false
         }
     }
+}
+
+runIde {
+    ideaDirectory = file("/home/tarikweiss/.local/share/JetBrains/Toolbox/apps/PhpStorm/ch-0/211.7442.50/")
 }
 
 patchPluginXml {
