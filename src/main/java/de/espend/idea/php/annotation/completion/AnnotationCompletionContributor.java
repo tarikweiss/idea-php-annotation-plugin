@@ -469,8 +469,9 @@ public class AnnotationCompletionContributor extends CompletionContributor {
                 return;
             }
 
-            final PhpIndex           index = PhpIndex.getInstance(parameters.getOriginalPosition().getProject());
-            final Collection<String> names = index.getAllClassNames(null);
+            final PhpIndex           index          = PhpIndex.getInstance(parameters.getOriginalPosition().getProject());
+            final Collection<String> names          = index.getAllClassNames(null);
+            final Collection<String> interfaceNames = index.getAllInterfaceNames();
             names
                 .stream()
                 .map(index::getClassesByName)
@@ -480,14 +481,22 @@ public class AnnotationCompletionContributor extends CompletionContributor {
                         .filter(phpClass -> !phpClass.getName().equals("__PHP_Incomplete_Class"))
                         .forEach(phpClass -> {
                             PhpFqnLookupElement lookupElement = new PhpFqnLookupElement(phpClass);
-                            lookupElement.handler = new InsertHandler<>() {
-                                @Override
-                                public void handleInsert(@NotNull InsertionContext context, @NotNull LookupElement item) {
-                                    PhpReferenceInsertHandler.getInstance().handleInsert(context, item);
-                                }
-                            };
+                            lookupElement.handler = (InsertHandler<LookupElement>) (context12, item) -> PhpReferenceInsertHandler.getInstance().handleInsert(context12, item);
                             result.addElement(PrioritizedLookupElement.withPriority(lookupElement, 1));
                         }));
+
+            interfaceNames
+                    .stream()
+                    .map(index::getInterfacesByName)
+                    .forEach(phpInterfaces ->
+                            phpInterfaces.forEach(
+                                    phpInterface -> {
+                                        PhpFqnLookupElement lookupElement = new PhpFqnLookupElement(phpInterface);
+                                        lookupElement.handler = (context1, item) -> PhpReferenceInsertHandler.getInstance().handleInsert(context1, item);
+                                        result.addElement(PrioritizedLookupElement.withPriority(lookupElement, 2));
+                                    }
+                            )
+                    );
         }
     }
 
